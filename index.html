@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Surprise 🎉</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:"Poppins",sans-serif;}
+    html,body{height:100%;overflow:hidden;background:black;}
+
+    /* Slide container */
+    .slide{
+      display:none; height:100%; width:100%;
+      position:absolute; top:0; left:0;
+      justify-content:center; align-items:center;
+      flex-direction:column; text-align:center; padding:20px;
+      color:white; z-index:2;
+    }
+    .active{display:flex;}
+
+    h1,p{margin:15px 0; max-width:90%;}
+
+    .btn{
+      background:linear-gradient(45deg,#ff0080,#ff8c00);
+      color:white; padding:12px 25px; border:none;
+      border-radius:25px; cursor:pointer; margin-top:20px;
+      font-size:clamp(14px,2.8vw,18px); transition:transform .2s ease-in-out;
+      z-index:3;
+    }
+    .btn:hover{transform:scale(1.05)}
+
+    /* Video styling (instead of image) */
+    .memory-video{
+      width:clamp(240px,70%,480px);
+      max-height:65vh;
+      border-radius:15px;
+      box-shadow:0 4px 15px rgba(255,255,255,.4);
+      z-index:3;
+    }
+
+    /* Fireworks canvas */
+    canvas.fw{
+      position:absolute;
+      top:0; left:0;
+      width:100%; height:100%;
+      z-index:1;
+      pointer-events:none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slides -->
+  <div class="slide active" id="slide1">
+    <canvas class="fw"></canvas>
+    <h1>🎂 Happy Birthday Anjali  🎂</h1>
+    <p>On this special day, I want to celebrate you and the joy you bring into my life. 💖</p>
+    <button class="btn" onclick="nextSlide()">Next ➡️</button>
+  </div>
+
+  <div class="slide" id="slide2">
+    <canvas class="fw"></canvas>
+    <h1>✨ You Light Up My Life ✨</h1>
+    <p>Your smile makes my world brighter every single day 🌟</p>
+    <button class="btn" onclick="nextSlide()">Next ➡️</button>
+  </div>
+
+  <div class="slide" id="slide3">
+    <canvas class="fw"></canvas>
+    <h1>🎉 Let’s Celebrate 🎉</h1>
+    <p>Balloons, confetti, and endless smiles! 🥳</p>
+    <button class="btn" onclick="nextSlide()">Next ➡️</button>
+  </div>
+
+  <!-- 🔹 Replaced image with VIDEO -->
+  <div class="slide" id="slide4">
+    <canvas class="fw"></canvas>
+    <h1>💞 Our Memories 💞</h1>
+    <video class="memory-video" autoplay muted loop controls>
+      <source src="video.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <p>This moment... my forever favorite 💕</p>
+    <button class="btn" onclick="nextSlide()">Next ➡️</button>
+  </div>
+
+  <div class="slide" id="slide5">
+    <canvas class="fw"></canvas>
+    <h1>❤️ Happy Birthday ❤️</h1>
+    <p>You are my everything, my love, my life 🌹</p>
+    <button class="btn" onclick="restartSlides()">🎁 See Again 🎁</button>
+  </div>
+
+  <script>
+    /* Slide Switching */
+    let currentSlide=1;const totalSlides=5;
+    function showSlide(n){
+      currentSlide=n;
+      document.querySelectorAll(".slide").forEach((s,i)=>{
+        s.classList.remove("active");
+        if(i===n-1) s.classList.add("active");
+      });
+    }
+    function nextSlide(){if(currentSlide<totalSlides){showSlide(++currentSlide);}}
+    function restartSlides(){showSlide(1);}
+
+    /* ===== Fireworks per slide ===== */
+    class Firework{
+      constructor(sx,sy,tx,ty,ctx){
+        this.x=sx;this.y=sy;this.tx=tx;this.ty=ty;this.ctx=ctx;
+        this.coordinates=[[sx,sy],[sx,sy],[sx,sy]];
+        this.angle=Math.atan2(ty-sy,tx-sx);
+        this.speed=2;this.accel=1.05;
+        this.brightness=random(50,70);
+      }
+      update(index,fireworks,particles){
+        this.coordinates.pop();this.coordinates.unshift([this.x,this.y]);
+        this.speed*=this.accel;
+        this.x+=Math.cos(this.angle)*this.speed;
+        this.y+=Math.sin(this.angle)*this.speed;
+        if(dist(this.x,this.y,this.tx,this.ty)<5){
+          createParticles(this.tx,this.ty,particles,currentSlide===5);
+          fireworks.splice(index,1);
+        }
+      }
+      draw(){
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.coordinates[this.coordinates.length-1][0],this.coordinates[this.coordinates.length-1][1]);
+        this.ctx.lineTo(this.x,this.y);
+        this.ctx.strokeStyle=`hsl(${random(40,60)},100%,${this.brightness}%)`;
+        this.ctx.stroke();
+      }
+    }
+
+    class Particle{
+      constructor(x,y,ctx){
+        this.x=x;this.y=y;this.ctx=ctx;
+        this.coordinates=[[x,y],[x,y],[x,y]];
+        this.angle=random(0,Math.PI*2);
+        this.speed=random(2,12);
+        this.friction=0.94;this.gravity=1;
+        this.hue=random([45,50,55]); // golden-white
+        this.brightness=random(65,85);
+        this.alpha=1;this.decay=random(0.010,0.020);
+      }
+      update(index,particles){
+        this.coordinates.pop();
+        this.coordinates.unshift([this.x,this.y]);
+        this.speed*=this.friction;
+        this.x+=Math.cos(this.angle)*this.speed;
+        this.y+=Math.sin(this.angle)*this.speed+this.gravity;
+        this.alpha-=this.decay;
+        if(this.alpha<=0.05){particles.splice(index,1);}
+      }
+      draw(){
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.coordinates[this.coordinates.length-1][0],this.coordinates[this.coordinates.length-1][1]);
+        this.ctx.lineTo(this.x,this.y);
+        this.ctx.strokeStyle=`hsla(${this.hue},100%,${this.brightness}%,${this.alpha})`;
+        this.ctx.stroke();
+      }
+    }
+
+    function createParticles(x,y,particles,grand=false){
+      let count=grand?350:180;
+      while(count--) particles.push(new Particle(x,y,particles.ctx));
+    }
+
+    function dist(aX,aY,bX,bY){return Math.sqrt((bX-aX)**2+(bY-aY)**2);}
+    function random(min,max){
+      if(Array.isArray(min)) return min[Math.floor(Math.random()*min.length)];
+      return Math.random()*(max-min)+min;
+    }
+
+    /* Create fireworks for each slide */
+    document.querySelectorAll(".fw").forEach((canvas,i)=>{
+      const ctx=canvas.getContext("2d");
+      let fireworks=[],particles=[];
+      particles.ctx=ctx;
+      resize();
+      function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+      window.addEventListener("resize",resize);
+
+      function loop(){
+        requestAnimationFrame(loop);
+        if(currentSlide!==i+1) return;
+
+        ctx.globalCompositeOperation="destination-out";
+        ctx.fillStyle="rgba(0,0,0,0.5)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.globalCompositeOperation="lighter";
+
+        let f=fireworks.length;while(f--){fireworks[f].draw();fireworks[f].update(f,fireworks,particles);}
+        let p=particles.length;while(p--){particles[p].draw();particles[p].update(p,particles);}
+
+        let chance=currentSlide===5?0.25:0.15;
+        if(Math.random()<chance){
+          let sx=random(0,canvas.width), sy=canvas.height;
+          let tx=random(0,canvas.width), ty=random(0,canvas.height/2);
+          fireworks.push(new Firework(sx,sy,tx,ty,ctx));
+        }
+      }
+      loop();
+    });
+  </script>
+</body>
+</html>
